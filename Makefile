@@ -64,7 +64,8 @@ infra-deploy-api: ## Build and push Docker image, update Container App
 		--resource-group $(RESOURCE_GROUP) \
 		--image $(IMAGE)
 
-infra-deploy-web: ## Build Angular app and deploy to Static Web App
+infra-deploy-web: ## Build Angular app and deploy to Static Web App (requires NG_APP_AI_CONNECTION_STRING env var)
+	@test -n "$(NG_APP_AI_CONNECTION_STRING)" || (echo "Error: NG_APP_AI_CONNECTION_STRING is not set"; exit 1)
 	cd web && npx ng build --configuration=production
 	swa deploy web/dist/web/browser \
 		--deployment-token "$$(az staticwebapp secrets list --name $(SWA_NAME) --resource-group $(RESOURCE_GROUP) --query 'properties.apiKey' -o tsv)" \
