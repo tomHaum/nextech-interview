@@ -52,3 +52,29 @@ test('paginator is present', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('group', { name: /select page/i })).toBeVisible();
 });
+
+test('clicking next page sends page=2 to the API', async ({ page }) => {
+  await page.unrouteAll();
+  await page.route(STORIES_URL, route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        items: [{ id: 1, title: 'Alpha Story', url: 'https://alpha.com', by: 'user1', time: 1700000001, score: 100 }],
+        total: 50,
+        page: 1,
+        pageSize: 20
+      })
+    })
+  );
+
+  await page.goto('/');
+
+  const nextRequest = page.waitForRequest(req =>
+    req.url().includes('/api/stories') && req.url().includes('page=2')
+  );
+  await page.getByLabel('Next page').click();
+
+  const req = await nextRequest;
+  expect(req.url()).toContain('page=2');
+});
