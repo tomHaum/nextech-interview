@@ -3,6 +3,8 @@ bin/
 obj/
 *.user
 .vs/
+publish/
+*.zip
 
 # Node / Angular
 node_modules/
