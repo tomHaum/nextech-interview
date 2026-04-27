@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Nextech.Api/Nextech.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Nextech.Api.IntegrationTests/Nextech.Api.IntegrationTests.csproj" />
+    <Project Path="tests/Nextech.Api.UnitTests/Nextech.Api.UnitTests.csproj" />
+  </Folder>
+</Solution>
