@@ -91,3 +91,17 @@ Notable interactions with Claude during development of this project. Captures de
 
 **Outcome:** Meaningful behavioural coverage rather than a presence check.
 
+---
+
+## 8. Rejecting the initial UI design
+
+**Prompt (user):** "The UI looks pretty basic — can we do a full visual refresh?"
+
+**What AI initially produced:** The original design spec proposed: relative timestamps, a `(no link)` subtext on URL-less stories, a `mat-progress-bar` instead of a spinner, an empty state message, and autofocus on the search field. All reasonable additions — but the visual direction was still the default Angular Material skeleton (indigo-pink prebuilt theme, `mat-card` wrapper, `mat-list-item` rows). Functional, but generic.
+
+**Rejection:** The spec's visual direction was rejected as too close to the Material boilerplate. The reasoning: the challenge evaluates "elegance and structure of the design" — a default theme signals no intentionality.
+
+**What was built instead:** A full visual refresh using approach "1+3": a custom Angular Material M3 theme with HN orange (`mat.$orange-palette`) as the primary palette, a `mat-toolbar` app bar, and custom `<ul>/<li>` story rows (dropping `mat-list-item` for full CSS control). The result: HN-branded orange throughout, left accent bars, warm hover state, and a grey page background behind the white card.
+
+**Outcome:** The AI's spec gaps (empty state, relative time, no-link badge, progress bar) were all kept and implemented. The visual presentation was rebuilt from scratch with an intentional design direction rather than accepting the default skeleton.
+
