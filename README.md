@@ -55,9 +55,17 @@ nextech/
 ## Local Development
 
 ### Prerequisites
-- .NET 10 SDK
-- Node.js 20+
-- Docker (for container builds)
+
+| Tool | Version | Used for |
+|---|---|---|
+| [.NET SDK](https://dotnet.microsoft.com/download) | 10.0+ | API development and tests |
+| [Node.js](https://nodejs.org) | 20+ | Angular CLI and frontend tooling |
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | any | Building the API container image |
+| [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) | 2.60+ | Provisioning and deploying to Azure |
+| [SWA CLI](https://azure.github.io/static-web-apps-cli/) | any | Deploying the frontend to Static Web Apps (`npm i -g @azure/static-web-apps-cli`) |
+| `make` | any | Running Makefile targets (`make help` lists all) |
+
+Docker and Azure CLI are only needed for deployment — local dev and testing work without them.
 
 ### API
 
