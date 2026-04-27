@@ -1,0 +1,36 @@
+<mat-card class="stories-card">
+  <mat-card-header>
+    <mat-card-title>Hacker News — Newest Stories</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search stories</mat-label>
+      <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearch($event)" placeholder="Filter by title..." />
+    </mat-form-field>
+
+    <div *ngIf="loading()" class="spinner-container">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <mat-list *ngIf="!loading()">
+      <mat-list-item *ngFor="let story of stories()" class="story-item">
+        <div matListItemTitle>
+          <a *ngIf="story.url" [href]="story.url" target="_blank" rel="noopener">{{ story.title }}</a>
+          <span *ngIf="!story.url">{{ story.title }}</span>
+        </div>
+        <div matListItemLine class="story-meta">
+          by {{ story.by }} &bull; {{ story.score }} points &bull; {{ story.time | date:'short' }}
+        </div>
+      </mat-list-item>
+    </mat-list>
+
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="pageSize()"
+      [pageIndex]="page() - 1"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPage($event)"
+      aria-label="Select page">
+    </mat-paginator>
+  </mat-card-content>
+</mat-card>
