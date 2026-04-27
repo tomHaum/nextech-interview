@@ -95,7 +95,7 @@ cd api
 dotnet test
 ```
 
-### Frontend — Karma unit tests (14 tests)
+### Frontend — Karma unit tests (21 tests)
 
 ```bash
 cd web
