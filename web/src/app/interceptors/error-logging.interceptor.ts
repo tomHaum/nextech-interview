@@ -8,10 +8,10 @@ export const errorLoggingInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((err: unknown) => {
       if (err instanceof HttpErrorResponse) {
-        console.error(`HTTP ${err.status} on ${err.url}`, err.url, err);
+        console.error(`HTTP ${err.status}`, req.url, err);
         appInsights.trackException(
           new Error(`HTTP ${err.status}`),
-          { url: err.url ?? '', status: String(err.status) }
+          { url: req.url, status: String(err.status) }
         );
       }
       return throwError(() => err);
