@@ -69,7 +69,7 @@ Notable interactions with Claude during development of this project. Captures de
 
 ---
 
-## 5. Docker multi-platform build: ARM → amd64
+## 6. Docker multi-platform build: ARM → amd64
 
 **Prompt:** Build and push Docker image for the Container App.
 
@@ -81,7 +81,7 @@ Notable interactions with Claude during development of this project. Captures de
 
 ---
 
-## 6. Pagination E2E test gap caught by user
+## 7. Pagination E2E test gap caught by user
 
 **Prompt (user):** "What happened to the pagination E2E tests?"
 
@@ -93,7 +93,7 @@ Notable interactions with Claude during development of this project. Captures de
 
 ---
 
-## 7. package-lock.json left uncommitted
+## 8. package-lock.json left uncommitted
 
 **Prompt (user):** "Why is the lock file sitting around?"
 
