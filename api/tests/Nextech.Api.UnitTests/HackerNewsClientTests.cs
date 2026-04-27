@@ -3,6 +3,8 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
@@ -13,11 +15,11 @@ namespace Nextech.Api.UnitTests;
 
 public class HackerNewsClientTests
 {
-    private static HackerNewsClient CreateSut(HttpMessageHandler handler)
+    private static HackerNewsClient CreateSut(HttpMessageHandler handler, ILogger<HackerNewsClient>? logger = null)
     {
         var http = new HttpClient(handler) { BaseAddress = new Uri("https://example.com/v0/") };
         var opts = Options.Create(new HackerNewsOptions { BaseUrl = "https://example.com/v0/" });
-        return new HackerNewsClient(http, opts);
+        return new HackerNewsClient(http, opts, logger ?? NullLogger<HackerNewsClient>.Instance);
     }
 
     private static Mock<HttpMessageHandler> HandlerReturning(string url, HttpResponseMessage response)
@@ -85,5 +87,55 @@ public class HackerNewsClientTests
 
         item.Should().BeNull();
         handler.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetNewStoryIdsAsync_logs_error_and_rethrows_on_http_failure()
+    {
+        var handler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("network error"));
+        var mockLogger = new Mock<ILogger<HackerNewsClient>>();
+        var sut = CreateSut(handler.Object, mockLogger.Object);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            sut.GetNewStoryIdsAsync(CancellationToken.None));
+
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<HttpRequestException>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetItemAsync_logs_error_and_rethrows_on_http_failure()
+    {
+        var handler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        handler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("network error"));
+        var mockLogger = new Mock<ILogger<HackerNewsClient>>();
+        var sut = CreateSut(handler.Object, mockLogger.Object);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            sut.GetItemAsync(42, CancellationToken.None));
+
+        mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<HttpRequestException>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }
