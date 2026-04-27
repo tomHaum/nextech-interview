@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatListModule } from '@angular/material/list';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { StoryService } from '../services/story.service';
 import { Story, StoriesResponse } from '../models/story.model';
 
@@ -17,7 +18,7 @@ import { Story, StoriesResponse } from '../models/story.model';
   imports: [
     CommonModule, FormsModule,
     MatInputModule, MatFormFieldModule, MatProgressSpinnerModule,
-    MatPaginatorModule, MatListModule, MatCardModule
+    MatPaginatorModule, MatListModule, MatCardModule, MatButtonModule
   ],
   templateUrl: './stories.component.html',
   styleUrl: './stories.component.scss'
@@ -32,6 +33,7 @@ export class StoriesComponent implements OnInit, OnDestroy {
   page = signal(1);
   pageSize = signal(20);
   loading = signal(false);
+  error = signal(false);
   searchQuery = '';
 
   ngOnInit(): void {
@@ -61,7 +63,7 @@ export class StoriesComponent implements OnInit, OnDestroy {
     this.load(this.searchQuery);
   }
 
-  private load(search?: string): void {
+  load(search?: string): void {
     this.loading.set(true);
     this.storyService.getStories({
       search: search || undefined,
@@ -72,8 +74,12 @@ export class StoriesComponent implements OnInit, OnDestroy {
         this.stories.set(res.items);
         this.total.set(res.total);
         this.loading.set(false);
+        this.error.set(false);
       },
-      error: () => this.loading.set(false)
+      error: () => {
+        this.loading.set(false);
+        this.error.set(true);
+      }
     });
   }
 }

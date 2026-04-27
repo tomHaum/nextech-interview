@@ -12,7 +12,12 @@
       <mat-spinner diameter="40"></mat-spinner>
     </div>
 
-    <mat-list *ngIf="!loading()">
+    <div *ngIf="error() && !loading()" class="error-container">
+      <p class="error-message">Failed to load stories.</p>
+      <button mat-stroked-button (click)="load()">Retry</button>
+    </div>
+
+    <mat-list *ngIf="!loading() && !error()">
       <mat-list-item *ngFor="let story of stories()" class="story-item">
         <div matListItemTitle>
           <a *ngIf="story.url" [href]="story.url" target="_blank" rel="noopener">{{ story.title }}</a>
