@@ -43,7 +43,19 @@ Notable interactions with Claude during development of this project. Captures de
 
 ---
 
-## 4. Infrastructure pivot: App Service → Container Apps
+## 4. Pivot to infrastructure as code (Bicep)
+
+**Prompt (user):** "Can we use Bicep? I want to make sure it's all IaC."
+
+**Context:** The original plan was to provision resources with imperative `az` CLI commands. After explaining the difference between Bicep (declarative, idempotent, version-controlled) and raw CLI (imperative, requires manual "already exists" handling), the user chose Bicep.
+
+**Decision:** All Azure resources defined in `infra/main.bicep`. The entire stack deploys with two commands: `az group create` + `az deployment group create`. Resources are reproducible and diff-able in git.
+
+**Outcome:** IaC-first approach meant the App Service → Container Apps pivot (see entry 5) was a clean file edit rather than a series of CLI deletions and recreations.
+
+---
+
+## 5. Infrastructure pivot: App Service → Container Apps
 
 **Prompt:** Provision Azure resources using Bicep.
 
