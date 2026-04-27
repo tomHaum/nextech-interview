@@ -1,12 +1,10 @@
 import { Component } from '@angular/core';
+import { StoriesComponent } from './stories/stories.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  imports: [StoriesComponent],
+  template: `<app-stories />`
 })
-export class AppComponent {
-  title = 'web';
-}
+export class AppComponent {}
