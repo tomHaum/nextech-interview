@@ -14,6 +14,7 @@ export const errorLoggingInterceptor: HttpInterceptorFn = (req, next) => {
           { url: req.url, status: String(err.status) }
         );
       }
+      // Re-throw so the subscriber's error callback handles it — not GlobalErrorHandler.
       return throwError(() => err);
     })
   );

@@ -42,7 +42,7 @@ internal sealed class HackerNewsClient : IHackerNewsClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to fetch {Endpoint}", $"item/{id}.json");
+            _logger.LogError(ex, "Failed to fetch item {ItemId}", id);
             throw;
         }
     }
