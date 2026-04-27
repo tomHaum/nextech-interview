@@ -7,11 +7,21 @@ IMAGE          := $(ACR_NAME).azurecr.io/nextech-api:latest
 
 .DEFAULT_GOAL := help
 .PHONY: help \
+	run run-api run-web \
 	test test-api test-api-unit test-api-integration test-web test-e2e \
 	infra-providers infra-provision infra-outputs infra-deploy-api infra-deploy-web infra-deploy
 
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-22s %s\n", $$1, $$2}'
+
+run-api: ## Start the API locally on http://localhost:5000
+	cd api && dotnet run --project src/Nextech.Api
+
+run-web: ## Start the Angular dev server on http://localhost:4200
+	cd web && npx ng serve
+
+run: ## Run API and frontend together (Ctrl+C stops both)
+	$(MAKE) -j2 run-api run-web
 
 test-api-unit: ## Run API unit tests
 	cd api && dotnet test tests/Nextech.Api.UnitTests
