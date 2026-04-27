@@ -1,0 +1,22 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Editors / OS
+.idea/
+.DS_Store
+
+# Environment / secrets
+appsettings.Local.json
+*.pfx
