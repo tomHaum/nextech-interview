@@ -73,8 +73,14 @@ AI is completely dormant when the connection string is empty. Errors surface in 
 - **New npm package:** `@microsoft/applicationinsights-web`
 - **No new backend packages** — `ILogger` is already available via ASP.NET Core DI.
 
+## Cost Controls
+
+**Daily ingestion cap:** Set a daily data cap on the Application Insights resource in the Azure portal (Monitor → Application Insights → Usage and estimated costs → Daily cap). Once the cap is hit, AI stops ingesting for the remainder of the day. This is the primary guard against runaway costs from a traffic flood. Recommended starting value: 0.1 GB/day for a low-traffic site.
+
+This is a one-time manual step in the portal, not a code change.
+
 ## Out of Scope
 
 - Router change tracking (not needed — app has a single view)
 - Performance/page-view telemetry
-- Log sampling or rate limiting
+- Client-side error throttling
