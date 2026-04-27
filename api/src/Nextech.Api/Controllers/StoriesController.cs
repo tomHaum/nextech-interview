@@ -6,7 +6,7 @@ namespace Nextech.Api.Controllers;
 
 [ApiController]
 [Route("api/stories")]
-internal sealed class StoriesController : ControllerBase
+public sealed class StoriesController : ControllerBase
 {
     private readonly IStoryCache _cache;
 
