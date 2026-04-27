@@ -24,7 +24,12 @@ builder.Services.AddSingleton<IStoryCache, StoryCache>();
 builder.Services.AddHostedService<StoryRefreshService>();
 
 builder.Services.AddControllers();
-builder.Services.AddApplicationInsightsTelemetry();
+
+if (!string.IsNullOrEmpty(builder.Configuration["ApplicationInsights:ConnectionString"])
+    || !string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
+{
+    builder.Services.AddApplicationInsightsTelemetry();
+}
 
 var app = builder.Build();
 
