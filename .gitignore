@@ -22,3 +22,6 @@ test-results/
 # Environment / secrets
 appsettings.Local.json
 *.pfx
+
+# Git worktrees
+.worktrees/
