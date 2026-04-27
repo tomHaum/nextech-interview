@@ -8,7 +8,7 @@ import { StoriesComponent } from './stories/stories.component';
   imports: [StoriesComponent, MatToolbarModule],
   styles: [`
     .hn-logo {
-      width: 26px; height: 26px; background: white; color: #ff6600;
+      width: 26px; height: 26px; background: white; color: var(--mat-sys-primary);
       border-radius: 4px; font-weight: 900; font-size: 14px;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
