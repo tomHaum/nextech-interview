@@ -1,4 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:5013'
+  apiUrl: 'http://localhost:5013',
+  appInsightsConnectionString: ''
 };
