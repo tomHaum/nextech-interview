@@ -91,14 +91,3 @@ Notable interactions with Claude during development of this project. Captures de
 
 **Outcome:** Meaningful behavioural coverage rather than a presence check.
 
----
-
-## 8. package-lock.json left uncommitted
-
-**Prompt (user):** "Why is the lock file sitting around?"
-
-**Root cause:** The subagent that installed Playwright only staged specific files (`playwright.config.ts`, `e2e/`, `package.json`) and omitted `package-lock.json`.
-
-**Fix:** Committed in a follow-up chore commit. `package-lock.json` should always be committed alongside `package.json` changes.
-
-**Lesson:** Subagents need explicit instructions to stage lock files when adding dependencies.
