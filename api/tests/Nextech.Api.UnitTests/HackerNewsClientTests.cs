@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -44,6 +45,7 @@ public class HackerNewsClientTests
         var ids = await sut.GetNewStoryIdsAsync(CancellationToken.None);
 
         ids.Should().BeEquivalentTo(new[] { 1, 2, 3 });
+        handler.VerifyAll();
     }
 
     [Fact]
@@ -52,7 +54,10 @@ public class HackerNewsClientTests
         var json = """{"id":42,"type":"story","title":"Ask HN: foo","url":null,"by":"u","time":123,"score":7}""";
         var handler = HandlerReturning(
             "https://example.com/v0/item/42.json",
-            new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json) });
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            });
         var sut = CreateSut(handler.Object);
 
         var item = await sut.GetItemAsync(42, CancellationToken.None);
@@ -62,6 +67,7 @@ public class HackerNewsClientTests
         item.Title.Should().Be("Ask HN: foo");
         item.Url.Should().BeNull();
         item.By.Should().Be("u");
+        handler.VerifyAll();
     }
 
     [Fact]
@@ -69,11 +75,15 @@ public class HackerNewsClientTests
     {
         var handler = HandlerReturning(
             "https://example.com/v0/item/9.json",
-            new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("null") });
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("null", Encoding.UTF8, "application/json")
+            });
         var sut = CreateSut(handler.Object);
 
         var item = await sut.GetItemAsync(9, CancellationToken.None);
 
         item.Should().BeNull();
+        handler.VerifyAll();
     }
 }

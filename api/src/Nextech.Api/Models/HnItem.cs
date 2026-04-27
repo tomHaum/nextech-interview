@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Nextech.Api.Models;
 
-public sealed record HnItem
+internal sealed record HnItem
 {
     [JsonPropertyName("id")] public int Id { get; init; }
     [JsonPropertyName("type")] public string? Type { get; init; }

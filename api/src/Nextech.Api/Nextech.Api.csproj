@@ -11,4 +11,13 @@
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Nextech.Api.UnitTests</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Nextech.Api.IntegrationTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>

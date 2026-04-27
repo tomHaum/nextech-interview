@@ -4,7 +4,7 @@ using Nextech.Api.Models;
 
 namespace Nextech.Api.HackerNews;
 
-public sealed class HackerNewsClient : IHackerNewsClient
+internal sealed class HackerNewsClient : IHackerNewsClient
 {
     private readonly HttpClient _http;
 
