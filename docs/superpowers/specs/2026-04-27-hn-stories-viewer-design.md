@@ -13,12 +13,12 @@ Out of scope: authentication, comments view, story details page, dark mode, GitH
 
 ## 2. Tech Stack
 
-- **API:** .NET 8 LTS, ASP.NET Core, C# 12
+- **API:** .NET 10, ASP.NET Core, C# 13
 - **Web:** Angular 18 LTS (standalone components, signals, new control flow), TypeScript 5
 - **UI:** Angular Material 18
 - **API testing:** xUnit, Moq, FluentAssertions, `WebApplicationFactory` for integration
 - **Web testing:** Karma/Jasmine for unit, Playwright for E2E
-- **Hosting:** Azure App Service (Linux, .NET 8) + Azure Static Web App
+- **Hosting:** Azure Container Apps (Consumption) + Azure Container Registry (Basic) + Azure Static Web App
 - **Observability:** Application Insights (default ASP.NET Core auto-collection + one custom log per cache refresh)
 
 ## 3. Repository Layout
@@ -57,7 +57,7 @@ nextech/
 │ - Signals           │        │ - StoryRefreshService      │        │                 │
 │                      │        │   (IHostedService, 60s)    │        │                 │
 └──────────────────────┘        └────────────────────────────┘        └─────────────────┘
-   Azure Static Web App            Azure App Service (Linux)
+   Azure Static Web App            Azure Container Apps
 ```
 
 **Data flow:**
@@ -105,7 +105,7 @@ api/src/Nextech.Api/
 
 Validation: `page >= 1`, `1 <= pageSize <= 100`. Returns `400` on bad input.
 
-`GET /api/health` → `200 OK` with `{ "status": "ok" }`. Used by App Service's health probe.
+`GET /api/health` → `200 OK` with `{ "status": "ok" }`. Used by Container Apps health probe.
 
 ### 5.3 Models
 
@@ -146,7 +146,7 @@ Validation: `page >= 1`, `1 <= pageSize <= 100`. Returns `400` on bad input.
 }
 ```
 
-In production, `Cors:AllowedOrigins:0` is overridden via App Service env var to the Static Web App URL.
+In production, `Cors:AllowedOrigins:0` is overridden via Container App env var to the Static Web App URL.
 
 ### 5.6 Dependency injection
 
@@ -267,23 +267,51 @@ Playwright launches the Angular dev server and stubs `/api/stories` via `page.ro
 
 ### 8.1 Resources
 
-- **Azure App Service (Linux, .NET 8, F1 free tier)** — hosts the API.
-- **Azure Static Web App (Free tier)** — hosts the Angular build output.
-- **Application Insights** — connection string set on App Service via `APPLICATIONINSIGHTS_CONNECTION_STRING`. Default ASP.NET Core auto-collection (requests, dependencies, exceptions). One custom log line per cache refresh: `"Cache refreshed: {Count} stories in {ElapsedMs}ms"`.
+All resources defined in `infra/main.bicep` and provisioned with two commands:
 
-Manual deploy for this submission (no GitHub Actions):
-- API: `dotnet publish -c Release` then `az webapp deploy --src-path …publish.zip` (or VS Code Azure extension).
-- Web: `ng build --configuration production` then `swa deploy ./dist/web/browser`.
+```bash
+az group create --name nextech-rg --location eastus
+az deployment group create --resource-group nextech-rg --template-file infra/main.bicep
+```
 
-### 8.2 Configuration on Azure
+- **Azure Container Registry (`nextechregistry`)** — stores the API Docker image (Basic SKU).
+- **Azure Container Apps Environment (`nextech-env`)** — Consumption plan, no VM quota restrictions.
+- **Container App (`tom-nextech-api`)** — hosts the API; scales to 0 when idle. Public URL: `https://tom-nextech-api.ambitiousbush-5c2916fd.eastus.azurecontainerapps.io`
+- **Azure Static Web App (`nextech-web`)** — hosts the Angular build output. URL: `https://wonderful-field-00df44c0f.7.azurestaticapps.net`
+- **Application Insights** — connection string injected as Container App secret via Bicep.
 
-- **API → CORS:** `Program.cs` reads `Cors:AllowedOrigins` from config. Set App Service env var `Cors__AllowedOrigins__0` to the Static Web App URL (e.g., `https://nextech-web.azurestaticapps.net`).
-- **Web → API URL:** `environment.production.ts` has `apiBaseUrl: 'https://nextech-api.azurewebsites.net'`. Built into the bundle at production build time (Static Web Apps don't have runtime client env vars).
-- **Health check path:** `/api/health` set on App Service.
+### 8.2 Deploy API
 
-### 8.3 First-request expectation
+```bash
+az acr login --name nextechregistry
+docker buildx build --platform linux/amd64 -t nextechregistry.azurecr.io/nextech-api:latest --load api/
+docker push nextechregistry.azurecr.io/nextech-api:latest
+az containerapp update \
+  --name tom-nextech-api \
+  --resource-group nextech-rg \
+  --image nextechregistry.azurecr.io/nextech-api:latest
+```
 
-On F1 free tier with cold start: ~10s for App Service to spin up + initial cache warm. README sets this expectation explicitly so reviewers don't think the app is broken.
+> **Note:** `--platform linux/amd64` is required on Apple Silicon. The `Dockerfile` uses `FROM --platform=$BUILDPLATFORM` for the SDK stage to run MSBuild natively and avoid QEMU emulation errors.
+
+### 8.3 Deploy frontend
+
+```bash
+cd web
+npx ng build --configuration=production
+DEPLOY_TOKEN=$(az staticwebapp secrets list --name nextech-web --resource-group nextech-rg --query "properties.apiKey" -o tsv)
+swa deploy dist/web/browser --deployment-token "$DEPLOY_TOKEN" --env production
+```
+
+### 8.4 Configuration
+
+- **CORS:** Bicep wires `Cors__AllowedOrigins__0` on the Container App to `https://${staticWebApp.properties.defaultHostname}` at deploy time — no manual step needed.
+- **App Insights:** Connection string injected as a Container App secret by Bicep.
+- **API URL in frontend:** `web/src/environments/environment.prod.ts` sets `apiUrl` to the Container App FQDN, baked into the Angular bundle at build time.
+
+### 8.5 Infrastructure note: why Container Apps?
+
+The original design targeted Azure App Service (Linux, F1). During provisioning on a fresh Azure free trial subscription, both B1 and F1 SKUs failed with `SubscriptionIsOverQuotaForSku` — Microsoft sets VM quota to 0 on new trial accounts. Container Apps Consumption plan has no such restriction and is included in the Azure free monthly grant.
 
 ## 9. README & AI Documentation
 
