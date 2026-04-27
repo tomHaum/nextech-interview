@@ -1,3 +1,6 @@
 declare const process: {
-  env: { [key: string]: string | undefined };
+  env: {
+    NG_APP_AI_CONNECTION_STRING?: string;
+    [key: string]: string | undefined;
+  };
 };
