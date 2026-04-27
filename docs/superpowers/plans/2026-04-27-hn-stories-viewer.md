@@ -6,7 +6,7 @@
 
 **Architecture:** API singleton `StoryCache` is kept warm by an `IHostedService` that refreshes every 60s from the HN API; the controller filters and paginates against this in-memory cache. Angular calls the API via `HttpClient` and renders results with Angular Material.
 
-**Tech Stack:** .NET 8, ASP.NET Core, xUnit, FluentAssertions, Moq, Application Insights · Angular 18 (standalone, signals), Angular Material, RxJS, Karma/Jasmine, Playwright · Azure App Service + Static Web App.
+**Tech Stack:** .NET 10, ASP.NET Core, xUnit, FluentAssertions, Moq, Application Insights · Angular 18 (standalone, signals), Angular Material, RxJS, Karma/Jasmine, Playwright · Azure Container Apps + ACR + Static Web App.
 
 **Source spec:** [docs/superpowers/specs/2026-04-27-hn-stories-viewer-design.md](../specs/2026-04-27-hn-stories-viewer-design.md)
 
@@ -1284,11 +1284,11 @@ export const environment = {
 ```typescript
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://nextech-api.azurewebsites.net',
+  apiUrl: 'https://tom-nextech-api.ambitiousbush-5c2916fd.eastus.azurecontainerapps.io',
 };
 ```
 
-(The actual production URL gets updated in Task 18 after the App Service is created.)
+(The actual production URL is set after Task 18 deploys the Container App.)
 
 - [ ] **Step 4: Wire up file replacements in `angular.json`**
 
@@ -2076,109 +2076,108 @@ If any fail, fix before moving on.
 
 ---
 
-## Task 18: Provision Azure resources
+## Task 18: Provision Azure resources (Bicep)
 
 **Files:**
-- Optional: `scripts/azure-setup.sh` (the commands captured for the README).
+- Create: `infra/main.bicep`
 
-- [ ] **Step 1: Pick names**
+All resources are defined in `infra/main.bicep` and provisioned with two commands. The original design targeted App Service (F1), but Azure free trial accounts have VM quota=0 for App Service. Container Apps Consumption plan has no such restriction.
 
-Choose globally-unique names. Suggested:
-- Resource group: `rg-nextech`
-- App Service plan: `plan-nextech`
-- App Service (API): `nextech-api-<your-initials>`
-- Static Web App: `nextech-web-<your-initials>`
-- App Insights: `appi-nextech`
+Resources created:
+- Log Analytics workspace (`nextech-logs`)
+- Application Insights (`nextech-insights`)
+- Azure Container Registry (`nextechregistry`, Basic)
+- Container Apps Environment (`nextech-env`, Consumption)
+- Container App (`tom-nextech-api`, placeholder image, scales to 0)
+- Static Web App (`nextech-web`, Free)
 
-- [ ] **Step 2: Login and provision via az CLI**
+- [ ] **Step 1: Log in and create resource group**
 
 ```bash
 az login
-az group create -n rg-nextech -l eastus
-
-az appservice plan create -g rg-nextech -n plan-nextech --is-linux --sku F1
-az webapp create -g rg-nextech -p plan-nextech -n nextech-api-<initials> --runtime "DOTNETCORE:8.0"
-
-az monitor app-insights component create -g rg-nextech -a appi-nextech -l eastus --application-type web
-
-# Capture the connection string
-APPI_CS=$(az monitor app-insights component show -g rg-nextech -a appi-nextech --query connectionString -o tsv)
-
-az webapp config appsettings set -g rg-nextech -n nextech-api-<initials> --settings \
-  APPLICATIONINSIGHTS_CONNECTION_STRING="$APPI_CS" \
-  Cors__AllowedOrigins__0="https://placeholder-will-update.azurestaticapps.net"
-
-az webapp config set -g rg-nextech -n nextech-api-<initials> --health-check-path /api/health
+az group create --name nextech-rg --location eastus
 ```
+Expected: `"provisioningState": "Succeeded"`
 
-- [ ] **Step 3: Create Static Web App (free tier)**
+- [ ] **Step 2: Register required providers**
 
 ```bash
-az staticwebapp create -g rg-nextech -n nextech-web-<initials> -l eastus2 --sku Free
+az provider register --namespace Microsoft.App --wait
+az provider register --namespace Microsoft.ContainerRegistry --wait
+az provider register --namespace Microsoft.Insights --wait
 ```
 
-(Static Web Apps requires `eastus2`, `centralus`, `westus2`, or `westeurope` — use one of those.)
-
-- [ ] **Step 4: Capture the URLs**
+- [ ] **Step 3: Deploy Bicep template**
 
 ```bash
-az webapp show -g rg-nextech -n nextech-api-<initials> --query defaultHostName -o tsv
-az staticwebapp show -g rg-nextech -n nextech-web-<initials> --query defaultHostname -o tsv
+az deployment group create --resource-group nextech-rg --template-file infra/main.bicep
 ```
+Expected: `"provisioningState": "Succeeded"`
 
-Note both — call them `<API_URL>` and `<WEB_URL>` for the next steps.
-
-- [ ] **Step 5: Update CORS env var on API to actual web URL**
+- [ ] **Step 4: Capture outputs**
 
 ```bash
-az webapp config appsettings set -g rg-nextech -n nextech-api-<initials> --settings \
-  Cors__AllowedOrigins__0="https://<WEB_URL>"
+az deployment group show --resource-group nextech-rg --name main --query "properties.outputs" -o json
 ```
+Expected output includes `apiUrl`, `webUrl`, `acrLoginServer`, `acrName`.
 
-- [ ] **Step 6: Update `web/src/environments/environment.production.ts` with the actual API URL**
-
-```typescript
-export const environment = {
-  production: true,
-  apiBaseUrl: 'https://<API_URL>',
-};
-```
-
-- [ ] **Step 7: Commit env update**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add web/src/environments/environment.production.ts
-git commit -m "chore(web): point production env at deployed API URL"
+git add infra/main.bicep
+git commit -m "feat(infra): provision Azure resources via Bicep"
 ```
 
 ---
 
-## Task 19: Deploy API to App Service
+## Task 19: Deploy API to Container App
 
-**Files:** none (deployment commands captured in README in Task 21).
+**Files:**
+- Create: `api/Dockerfile`
 
-- [ ] **Step 1: Publish**
+Build the Docker image and push it to ACR, then update the Container App to use it.
+
+- [ ] **Step 1: Log in to ACR and build the image**
 
 ```bash
+az acr login --name nextechregistry
 cd api
-dotnet publish src/Nextech.Api -c Release -o publish
-cd publish && zip -r ../publish.zip . && cd ..
+docker buildx build --platform linux/amd64 -t nextechregistry.azurecr.io/nextech-api:latest --load .
 ```
+Note: `--platform linux/amd64` required on Apple Silicon. The Dockerfile uses `FROM --platform=$BUILDPLATFORM` for the SDK stage.
 
-- [ ] **Step 2: Deploy zip**
+Expected: `naming to nextechregistry.azurecr.io/nextech-api:latest done`
+
+- [ ] **Step 2: Push to ACR**
 
 ```bash
-az webapp deploy -g rg-nextech -n nextech-api-<initials> --src-path publish.zip --type zip
+docker push nextechregistry.azurecr.io/nextech-api:latest
 ```
+Expected: `latest: digest: sha256:...`
 
-- [ ] **Step 3: Smoke-test the deployed API**
+- [ ] **Step 3: Update Container App**
 
 ```bash
-curl https://<API_URL>/api/health
-curl 'https://<API_URL>/api/stories?page=1&pageSize=5'
+az containerapp update \
+  --name tom-nextech-api \
+  --resource-group nextech-rg \
+  --image nextechregistry.azurecr.io/nextech-api:latest
 ```
+Expected: returns the Container App FQDN.
 
-Expected: health returns `{"status":"ok"}`; stories returns JSON. First request may be slow on F1 cold start.
+- [ ] **Step 4: Smoke test**
+
+```bash
+curl https://tom-nextech-api.ambitiousbush-5c2916fd.eastus.azurecontainerapps.io/api/health
+```
+Expected: `{"status":"ok"}`
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add api/Dockerfile
+git commit -m "feat(api): add Dockerfile for Container App deployment"
+```
 
 ---
 
@@ -2233,12 +2232,12 @@ Built as a coding challenge submission.
 - Web: https://<WEB_URL>
 - API: https://<API_URL>
 
-> The API runs on Azure App Service Free (F1). The first request after a cold start may take ~10s while the instance warms and the cache populates.
+> The API runs on Azure Container Apps (Consumption). The first request after the container scales from zero may take ~5–10s while the instance starts and the cache warms.
 
 ## Architecture
 
 \`\`\`
-Angular 18 (Static Web App) ──► ASP.NET Core 8 (App Service) ──► Hacker News API
+Angular 18 (Static Web App) ──► ASP.NET Core 10 (Container App) ──► Hacker News API
                                   ↑
                              StoryCache (singleton, in-memory)
                                   ↑
@@ -2249,13 +2248,13 @@ Angular 18 (Static Web App) ──► ASP.NET Core 8 (App Service) ──► Hac
 
 ## Stack
 
-- **API:** .NET 8, ASP.NET Core, xUnit, Moq, FluentAssertions, Application Insights
+- **API:** .NET 10, ASP.NET Core, xUnit, Moq, FluentAssertions, Application Insights
 - **Web:** Angular 18 (standalone, signals), Angular Material, RxJS, Karma/Jasmine, Playwright
-- **Infra:** Azure App Service (Linux, .NET 8) + Azure Static Web App
+- **Infra:** Azure Container Apps + ACR + Azure Static Web App (all via Bicep)
 
 ## Running locally
 
-**Prereqs:** .NET 8 SDK, Node 20+, Angular CLI 18 (\`npm i -g @angular/cli@18\`).
+**Prereqs:** .NET 10 SDK, Node 20+, Docker Desktop, Azure CLI.
 
 \`\`\`bash
 # API
@@ -2291,7 +2290,7 @@ cd web && npm run e2e
 
 Both resources are provisioned and deployed via the Azure CLI. See [docs/superpowers/specs/2026-04-27-hn-stories-viewer-design.md](docs/superpowers/specs/2026-04-27-hn-stories-viewer-design.md) §8 and the implementation plan for the exact commands.
 
-Key environment variables on the App Service:
+Key environment variables on the Container App:
 - \`APPLICATIONINSIGHTS_CONNECTION_STRING\` — App Insights ingestion
 - \`Cors__AllowedOrigins__0\` — the Static Web App URL (https-prefixed, no trailing slash)
 
@@ -2328,16 +2327,16 @@ The challenge requires AI partnering. This was built using **Claude Code (Opus 4
 ### Notable rejections / modifications
 
 - AI initially suggested **Polly retry policies** wrapped around `HackerNewsClient`. Rejected — the refresh service already tolerates per-item failures and keeps the stale cache on errors. Adding Polly would have been YAGNI for the scope.
-- AI suggested an **`IDistributedCache`** abstraction "in case you want to swap to Redis later." Rejected — single-instance F1 deployment, no horizontal scaling in scope, and the abstraction would have obscured the actual logic.
+- AI suggested an **`IDistributedCache`** abstraction "in case you want to swap to Redis later." Rejected — single Container App instance, no horizontal scaling in scope, and the abstraction would have obscured the actual logic.
 - For the Angular component, AI proposed **NgRx** for state management. Rejected — this is one screen with three signals, not a state-management problem. Plain signals and a Subject for debouncing are clearer.
 
 ## Trade-offs & next steps
 
 - **No auth.** Public read-only data, no need.
-- **Single-instance cache.** Each App Service instance has its own copy. Horizontal scaling would need a shared cache (Redis) — out of scope.
+- **Single-instance cache.** Each Container App replica has its own copy. Horizontal scaling would need a shared cache (Redis) — out of scope.
 - **No GitHub Actions CI.** Manual deploy via `az` for this submission. CI would be the obvious next step.
-- **No custom domain.** Default `*.azurewebsites.net` and `*.azurestaticapps.net` are used.
-- **No rate limiting on the API.** With an F1 tier and a tiny audience, not a concern; for production, add `Microsoft.AspNetCore.RateLimiting` middleware.
+- **No custom domain.** Default `*.azurecontainerapps.io` and `*.azurestaticapps.net` are used.
+- **No rate limiting on the API.** With a single Container App instance and a tiny audience, not a concern; for production, add `Microsoft.AspNetCore.RateLimiting` middleware.
 - **App Insights at default sampling.** A real deployment would tune sampling and add custom metrics for cache age and refresh duration.
 \`\`\`
 ```
