@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
+import { Component, OnInit, DestroyRef, signal, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -23,9 +24,9 @@ import { RelativeTimePipe } from '../pipes/relative-time.pipe';
   templateUrl: './stories.component.html',
   styleUrl: './stories.component.scss'
 })
-export class StoriesComponent implements OnInit, OnDestroy {
+export class StoriesComponent implements OnInit {
   private readonly storyService = inject(StoryService);
-  private readonly destroy$ = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
   private readonly searchSubject = new Subject<string>();
 
   stories = signal<Story[]>([]);
@@ -40,17 +41,12 @@ export class StoriesComponent implements OnInit, OnDestroy {
     this.searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
-      takeUntil(this.destroy$)
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe(search => {
       this.page.set(1);
       this.load(search);
     });
     this.load();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   onSearch(value: string): void {
