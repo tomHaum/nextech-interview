@@ -72,9 +72,9 @@ Docker and Azure CLI are only needed for deployment — local dev and testing wo
 ```bash
 cd api
 dotnet run --project src/Nextech.Api
-# Listening on http://localhost:5000
-# GET http://localhost:5000/api/stories?search=&page=1&pageSize=20
-# GET http://localhost:5000/api/health
+# Listening on http://localhost:5013
+# GET http://localhost:5013/api/stories?search=&page=1&pageSize=20
+# GET http://localhost:5013/api/health
 ```
 
 ### Frontend
@@ -83,7 +83,7 @@ dotnet run --project src/Nextech.Api
 cd web
 npm install
 npx ng serve
-# http://localhost:4200 (proxies /api to localhost:5000)
+# http://localhost:4200 (calls API at http://localhost:5013)
 ```
 
 ## Testing
