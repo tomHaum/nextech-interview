@@ -4,21 +4,21 @@ import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatListModule } from '@angular/material/list';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { StoryService } from '../services/story.service';
 import { Story, StoriesResponse } from '../models/story.model';
+import { RelativeTimePipe } from '../pipes/relative-time.pipe';
 
 @Component({
   selector: 'app-stories',
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    MatInputModule, MatFormFieldModule, MatProgressSpinnerModule,
-    MatPaginatorModule, MatListModule, MatCardModule, MatButtonModule
+    MatInputModule, MatFormFieldModule, MatProgressBarModule,
+    MatPaginatorModule, MatButtonModule,
+    RelativeTimePipe
   ],
   templateUrl: './stories.component.html',
   styleUrl: './stories.component.scss'

@@ -1,33 +1,163 @@
-.stories-card {
+.hn-body {
+  background: #f5f5f5;
+  min-height: calc(100vh - 64px);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.hn-card {
   max-width: 900px;
-  margin: 24px auto;
+  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.search-wrap {
+  padding: 16px 16px 0;
 }
 
 .search-field {
   width: 100%;
-  margin-bottom: 16px;
 }
 
-.spinner-container {
+// Story list
+.story-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  transition: opacity 0.15s;
+
+  &.loading {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+}
+
+.story-row {
   display: flex;
-  justify-content: center;
-  padding: 32px;
+  align-items: stretch;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #fffaf7;
+  }
+
+  &:first-child .accent-bar {
+    background: #ff6600;
+  }
+}
+
+.accent-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: #e8e8e8;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.story-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.story-link {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a65b8;
+  text-decoration: none;
+  line-height: 1.35;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.story-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+  line-height: 1.35;
+}
+
+.no-link-badge {
+  display: inline-block;
+  font-size: 10px;
+  background: #f0f0f0;
+  color: #aaa;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+  font-weight: 400;
 }
 
 .story-meta {
-  color: #666;
-  font-size: 0.85em;
+  font-size: 12px;
+  color: #999;
+  margin-top: 3px;
 }
 
+// Empty state
+.empty-state {
+  padding: 48px 16px;
+  text-align: center;
+  color: #aaa;
+}
+
+.empty-icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.empty-msg {
+  font-size: 14px;
+  margin: 0 0 6px;
+  color: #888;
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: #bbb;
+  margin: 0;
+}
+
+// Error state
 .error-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 32px;
+  padding: 40px 16px;
   gap: 12px;
 }
 
 .error-message {
   color: #c62828;
+  font-size: 14px;
   margin: 0;
+}
+
+// Footer
+.list-footer {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid #f0f0f0;
+  padding: 0 8px;
+}
+
+.story-count {
+  font-size: 12px;
+  color: #aaa;
+  padding-left: 8px;
+  flex: 1;
 }
