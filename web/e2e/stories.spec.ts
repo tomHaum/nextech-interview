@@ -20,7 +20,8 @@ test.beforeEach(async ({ page }) => {
 
 test('shows page heading', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByText('Hacker News — Newest Stories')).toBeVisible();
+  await expect(page.getByText('Hacker News')).toBeVisible();
+  await expect(page.getByText('/ newest')).toBeVisible();
 });
 
 test('displays story titles', async ({ page }) => {
